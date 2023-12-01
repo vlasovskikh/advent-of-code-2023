@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "command",
+            "name": "pre-commit",
+            "program": "pre-commit",
+            "args": ["run", "-a"]
+        }
+    ]
+}
