@@ -1,7 +1,7 @@
 import re
 import typing
 
-import aoc23.utils
+from aoc23 import utils
 
 
 DIGITS = {
@@ -66,7 +66,7 @@ def to_digit(s: str) -> str:
 
 
 def main() -> None:
-    lines = parse_input(aoc23.utils.read_input_lines(__file__))
+    lines = parse_input(utils.read_input_lines(__file__))
     print(sum_only_digits(lines))
     print(sum_all_digits(lines))
 
