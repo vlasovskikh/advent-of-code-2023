@@ -8,6 +8,8 @@ from aoc23 import utils
 
 
 class Match(typing.NamedTuple):
+    """A text match in the engine schematic."""
+
     value: str
     line: int
     span: tuple[int, int]
@@ -18,10 +20,12 @@ def parse_input(lines: list[str]) -> list[str]:
 
 
 def sum_part_numbers(schematic: list[str]) -> int:
+    """Sum all numbers of the schematics that belong to parts."""
     return sum(sum(part_numbers(schematic, line)) for line in range(len(schematic)))
 
 
 def sum_gear_ratios(schematic: list[str]) -> int:
+    """Sum ratios for all parts of the schematics that are gears."""
     gear_like = sorted(
         (part, num)
         for line in range(len(schematic))
@@ -41,6 +45,7 @@ def sum_gear_ratios(schematic: list[str]) -> int:
 
 
 def part_numbers(schematic: list[str], line: int) -> list[int]:
+    """Find all numbers belonging to parts in a line of the schematic."""
     return [
         int(num.value)
         for num, parts in numbers_to_parts(schematic, line).items()
@@ -49,6 +54,7 @@ def part_numbers(schematic: list[str], line: int) -> list[int]:
 
 
 def numbers_to_parts(schematic: list[str], line: int) -> dict[Match, list[Match]]:
+    """Map all numbers in a line of the schematic to the parts they tounch."""
     nums = [
         Match(value=m.group(), line=line, span=m.span())
         for m in re.finditer(r"\d+", schematic[line])
@@ -57,6 +63,7 @@ def numbers_to_parts(schematic: list[str], line: int) -> dict[Match, list[Match]
 
 
 def parts(num: Match, schematic: list[str]) -> list[Match]:
+    """Find all the parts touching this number in the schematic."""
     start = max(num.span[0] - 1, 0)
     end = min(num.span[1] + 1, len(schematic[num.line]))
     return [
