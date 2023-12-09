@@ -12,6 +12,7 @@ python = "^3.12"
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
 pyinstrument = "^4.6.1"
+plotext = "^5.2.8"
 
 [build-system]
 requires = ["poetry-core"]
