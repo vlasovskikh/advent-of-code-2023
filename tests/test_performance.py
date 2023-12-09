@@ -3,6 +3,7 @@ import statistics
 import subprocess
 import sys
 import time
+import typing
 
 import plotext
 import pytest
@@ -10,12 +11,10 @@ import aoc23
 
 
 @pytest.fixture(scope="session")
-def puzzle_runs() -> dict[str, float]:
-    return run_puzzles()
-
-
-def run_puzzles():
-    return {path.stem: running_time(path) for path in puzzle_paths()}
+def puzzle_runs() -> typing.Iterator[dict[str, float]]:
+    runs = {path.stem: running_time(path) for path in puzzle_paths()}
+    yield runs
+    show_times_plot(runs)
 
 
 def puzzle_paths() -> list[pathlib.Path]:
@@ -25,8 +24,7 @@ def puzzle_paths() -> list[pathlib.Path]:
 def running_time(path: pathlib.Path) -> float:
     t = time.perf_counter()
     module_name = f"{aoc23.__name__}.{path.stem}"
-    print(f"Running python -m {module_name}...")
-    subprocess.call([sys.executable, "-m", module_name])
+    subprocess.call([sys.executable, "-m", module_name], stdout=subprocess.DEVNULL)
     return time.perf_counter() - t
 
 
@@ -34,7 +32,8 @@ def running_time(path: pathlib.Path) -> float:
     "puzzle",
     [path.stem for path in puzzle_paths()],
 )
-def test_benchmark(puzzle: str, puzzle_runs: dict[str, float]) -> None:
+@pytest.mark.performance
+def test_performance(puzzle: str, puzzle_runs: dict[str, float]) -> None:
     if len(puzzle_runs) < 2:
         return
     times = puzzle_runs.values()
@@ -48,25 +47,16 @@ def test_benchmark(puzzle: str, puzzle_runs: dict[str, float]) -> None:
     mean = statistics.mean(no_outliers.values())
     t = puzzle_runs[puzzle]
     limit = mean * 10
-    if t > limit:
-        show_times_plot(puzzle_runs)
-        pytest.fail(
-            f"Time limit exceeded for {puzzle!r}: "
-            f"time: {t:.3f}, limit: {limit:.3f}, mean: {mean:.3f}"
-        )
+    assert t <= limit, (
+        f"Time limit exceeded for {puzzle!r}: "
+        f"time: {t:.3f}, limit: {limit:.3f}, mean: {mean:.3f}"
+    )
 
 
 def show_times_plot(runs: dict[str, float]) -> None:
+    print()
     run_items = sorted(runs.items())
     names = [name for name, _ in run_items]
     times = [value for _, value in run_items]
     plotext.simple_bar(names, times, title="Run Times")
     plotext.show()
-
-
-def main() -> None:
-    show_times_plot(run_puzzles())
-
-
-if __name__ == "__main__":
-    main()

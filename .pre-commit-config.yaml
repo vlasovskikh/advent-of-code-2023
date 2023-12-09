@@ -18,7 +18,16 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: poetry run pytest -m "not slow"
+        entry: poetry run pytest -m "not performance"
+        language: system
+        types:
+          - python
+        pass_filenames: false
+  - repo: local
+    hooks:
+      - id: performance
+        name: performance
+        entry: poetry run pytest -s -m performance
         language: system
         types:
           - python
