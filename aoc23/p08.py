@@ -1,3 +1,4 @@
+import enum
 import itertools
 import math
 import re
@@ -6,8 +7,12 @@ import typing
 from aoc23 import utils
 
 
-Instruction = typing.Literal["L", "R"]
-Node = str
+class Instruction(enum.StrEnum):
+    L = enum.auto()
+    R = enum.auto()
+
+
+Node = typing.NewType("Node", str)
 
 
 class Fork(typing.NamedTuple):
@@ -16,9 +21,9 @@ class Fork(typing.NamedTuple):
 
     def follow(self, instruction: Instruction) -> Node:
         match instruction:
-            case "L":
+            case Instruction.L:
                 return self.left
-            case "R":
+            case Instruction.R:
                 return self.right
             case _:
                 raise ValueError(f"Unknown instruction {instruction!r}")
@@ -37,7 +42,10 @@ class Map(typing.NamedTuple):
 
 
 def count_steps(map: Map) -> int:
-    path = itertools.takewhile(lambda node: node != "ZZZ", map.navigate("AAA"))
+    path = itertools.takewhile(
+        lambda node: node != Node("ZZZ"),
+        map.navigate(Node("AAA")),
+    )
     return sum(1 for _ in path) + 1
 
 
@@ -55,7 +63,7 @@ def count_ghost_steps(map: Map) -> int:
 
 def parse_input(lines: list[str]) -> Map:
     return Map(
-        instructions=[typing.cast(Instruction, s) for s in lines[0]],
+        instructions=[Instruction(s.lower()) for s in lines[0]],
         nodes=dict(parse_node(line) for line in lines[2:]),
     )
 
@@ -64,7 +72,7 @@ def parse_node(line: str) -> tuple[Node, Fork]:
     m = re.match(r"(\w{3}) = \((\w{3}), (\w{3})\)", line)
     if not m:
         raise ValueError(f"Unknown line: {line!r}")
-    return m.group(1), Fork(left=m.group(2), right=m.group(3))
+    return Node(m.group(1)), Fork(left=Node(m.group(2)), right=Node(m.group(3)))
 
 
 def main() -> None:
