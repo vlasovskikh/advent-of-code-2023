@@ -57,8 +57,7 @@ def count_ghost_steps(map: Map) -> int:
         for path in endless_paths
     ]
     periods = [sum(1 for _ in path) + 1 for path in paths_to_z]
-    gcd = math.gcd(*periods)
-    return math.prod(p // gcd for p in periods) * gcd
+    return math.lcm(*periods)
 
 
 def parse_input(lines: list[str]) -> Map:
