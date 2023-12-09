@@ -31,7 +31,7 @@ class Card(typing.NamedTuple):
         return names[self.value]
 
 
-class HandType(enum.Enum):
+class HandType(enum.IntEnum):
     HIGH_CARD = enum.auto()
     ONE_PAIR = enum.auto()
     TWO_PAIR = enum.auto()
@@ -39,19 +39,6 @@ class HandType(enum.Enum):
     FULL_HOUSE = enum.auto()
     FOUR_OF_KIND = enum.auto()
     FIVE_OF_KIND = enum.auto()
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, HandType):
-            return False
-        return self.value == other.value
-
-    def __lt__(self, other: object) -> bool:
-        if not isinstance(other, HandType):
-            return False
-        return self.value < other.value
-
-    def __hash__(self) -> int:
-        return hash(self.value)
 
 
 @functools.total_ordering
