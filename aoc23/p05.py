@@ -1,6 +1,7 @@
 from __future__ import annotations
 import functools
 import itertools
+import operator
 import re
 import typing
 
@@ -28,12 +29,12 @@ class IntSet(typing.NamedTuple):
             return IntSet(self.ranges)
         differences = [
             functools.reduce(
-                IntSet.__and__,
+                operator.and_,
                 [IntSet(self._range_difference(r1, r2)) for r2 in other.ranges],
             )
             for r1 in self.ranges
         ]
-        return functools.reduce(IntSet.__add__, filter(None, differences), IntSet(()))
+        return functools.reduce(operator.add, filter(None, differences), IntSet(()))
 
     def __bool__(self) -> bool:
         return any(self.ranges)
@@ -87,8 +88,8 @@ class Map(typing.NamedTuple):
     def translate(self, int_set: IntSet) -> IntSet:
         intersections = {e.to_int_set() & int_set: e for e in self.entries}
         shifts = [self._shift(s, e.offset) for s, e in intersections.items()]
-        remaining = functools.reduce(IntSet.__sub__, intersections.keys(), int_set)
-        return functools.reduce(IntSet.__add__, shifts, remaining)
+        remaining = functools.reduce(operator.sub, intersections.keys(), int_set)
+        return functools.reduce(operator.add, shifts, remaining)
 
     @classmethod
     def _shift(cls, int_set: IntSet, offset: int) -> IntSet:
