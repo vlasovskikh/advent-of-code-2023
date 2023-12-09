@@ -21,7 +21,7 @@ class Fork(typing.NamedTuple):
             case "R":
                 return self.right
             case _:
-                raise ValueError(f"Unkonwn instruciton: {instruction!r}")
+                raise ValueError(f"Unknown instruction {instruction!r}")
 
 
 class Map(typing.NamedTuple):
