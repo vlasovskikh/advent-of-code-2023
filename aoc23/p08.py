@@ -1,5 +1,4 @@
 import enum
-import itertools
 import math
 import re
 import typing
@@ -33,30 +32,29 @@ class Map(typing.NamedTuple):
     instructions: list[Instruction]
     nodes: dict[Node, Fork]
 
-    def navigate(self, start: Node) -> typing.Iterator[Node]:
+    def steps_until(
+        self,
+        start: Node,
+        predicate: typing.Callable[[Node], bool],
+    ) -> int:
         node = start
-        for i in itertools.count():
-            instruction = self.instructions[i % len(self.instructions)]
+        steps = 0
+        while not predicate(node):
+            instruction = self.instructions[steps % len(self.instructions)]
             node = self.nodes[node].follow(instruction)
-            yield node
+            steps += 1
+        return steps
 
 
 def count_steps(map: Map) -> int:
-    path = itertools.takewhile(
-        lambda node: node != Node("ZZZ"),
-        map.navigate(Node("AAA")),
-    )
-    return sum(1 for _ in path) + 1
+    return map.steps_until(Node("AAA"), lambda node: node == Node("ZZZ"))
 
 
 def count_ghost_steps(map: Map) -> int:
-    starts = [node for node in map.nodes if node.endswith("A")]
-    endless_paths = [map.navigate(node) for node in starts]
-    paths_to_z = [
-        itertools.takewhile(lambda node: not node.endswith("Z"), path)
-        for path in endless_paths
+    periods = [
+        map.steps_until(node, lambda node: node.endswith("Z"))
+        for node in [node for node in map.nodes if node.endswith("A")]
     ]
-    periods = [sum(1 for _ in path) + 1 for path in paths_to_z]
     return math.lcm(*periods)
 
 
