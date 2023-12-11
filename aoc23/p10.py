@@ -1,83 +1,8 @@
 from __future__ import annotations
 
-import dataclasses
 import enum
-import typing
 
 from aoc23 import utils
-
-T = typing.TypeVar("T")
-
-
-class Coord(typing.NamedTuple):
-    line: int
-    pos: int
-
-
-@dataclasses.dataclass
-class Grid(typing.Generic[T]):
-    """2D grid of tiles suitable for maze-like puzzles."""
-
-    data: list[list[T]]
-
-    def enumerate(self) -> typing.Iterator[tuple[Coord, T]]:
-        return (
-            (Coord(line, pos), x)
-            for line, xs in enumerate(self.data)
-            for pos, x in enumerate(xs)
-        )
-
-    def size(self) -> Coord:
-        return Coord(len(self.data), len(self.data[0]))
-
-    def lines(self) -> list[list[Coord]]:
-        return [
-            [Coord(line, pos) for pos in range(len(self.data[line]))]
-            for line in range(len(self.data))
-        ]
-
-    def find(self, tile: T) -> Coord | None:
-        return next((coord for coord, x in self.enumerate() if x == tile), None)
-
-    def neighbors(self, coord: Coord) -> list[Coord]:
-        return self.cross_neighbors(coord) + self.diagonal_neighbors(coord)
-
-    def cross_neighbors(self, coord: Coord) -> list[Coord]:
-        results = []
-        for line, pos in [
-            (coord.line, coord.pos - 1),
-            (coord.line, coord.pos + 1),
-            (coord.line - 1, coord.pos),
-            (coord.line + 1, coord.pos),
-        ]:
-            if 0 <= line < len(self.data) and 0 <= pos < len(self.data[coord.line]):
-                results.append(Coord(line, pos))
-        return results
-
-    def diagonal_neighbors(self, coord: Coord) -> list[Coord]:
-        return [
-            Coord(line, pos)
-            for line, pos in [
-                (coord.line - 1, coord.pos - 1),
-                (coord.line - 1, coord.pos + 1),
-                (coord.line + 1, coord.pos - 1),
-                (coord.line + 1, coord.pos + 1),
-            ]
-            if 0 <= line < len(self.data) and 0 <= pos < len(self.data[coord.line])
-        ]
-
-    def __getitem__(self, coord: Coord) -> T:
-        return self.data[coord.line][coord.pos]
-
-    def __iter__(self) -> typing.Iterator[Coord]:
-        return (
-            Coord(line, pos)
-            for line in range(len(self.data))
-            for pos in range(len(self.data[line]))
-        )
-
-    def __str__(self) -> str:
-        return "\n".join("".join(str(x) for x in line) for line in self.data)
 
 
 class Tile(enum.StrEnum):
@@ -93,19 +18,24 @@ class Tile(enum.StrEnum):
     def to_ascii(self) -> str:
         return ASCII_TABLES.get(self, self.value)
 
-    def connections(self) -> list[Coord]:
+    def connections(self) -> list[utils.Coord]:
         return TILE_CONNECTIONS[self]
 
 
-TILE_CONNECTIONS: dict[Tile, list[Coord]] = {
-    Tile.V: [Coord(-1, 0), Coord(1, 0)],
-    Tile.H: [Coord(0, -1), Coord(0, 1)],
-    Tile.L: [Coord(-1, 0), Coord(0, 1)],
-    Tile.J: [Coord(-1, 0), Coord(0, -1)],
-    Tile.S7: [Coord(1, 0), Coord(0, -1)],
-    Tile.F: [Coord(1, 0), Coord(0, 1)],
+TILE_CONNECTIONS: dict[Tile, list[utils.Coord]] = {
+    Tile.V: [utils.Coord(-1, 0), utils.Coord(1, 0)],
+    Tile.H: [utils.Coord(0, -1), utils.Coord(0, 1)],
+    Tile.L: [utils.Coord(-1, 0), utils.Coord(0, 1)],
+    Tile.J: [utils.Coord(-1, 0), utils.Coord(0, -1)],
+    Tile.S7: [utils.Coord(1, 0), utils.Coord(0, -1)],
+    Tile.F: [utils.Coord(1, 0), utils.Coord(0, 1)],
     Tile.GROUND: [],
-    Tile.START: [Coord(-1, 0), Coord(1, 0), Coord(0, -1), Coord(0, 1)],
+    Tile.START: [
+        utils.Coord(-1, 0),
+        utils.Coord(1, 0),
+        utils.Coord(0, -1),
+        utils.Coord(0, 1),
+    ],
 }
 
 
@@ -119,12 +49,12 @@ ASCII_TABLES = {
 }
 
 
-class PipeGrid(Grid[Tile]):
-    def loop_tiles(self) -> list[Coord]:
+class PipeGrid(utils.Grid[Tile]):
+    def loop_tiles(self) -> list[utils.Coord]:
         start = self._start()
         cur = prev = start
         steps = 0
-        tiles: list[Coord] = []
+        tiles: list[utils.Coord] = []
         while True:
             tiles.append(cur)
             cur, prev = next(c for c in self._connections(cur) if c != prev), cur
@@ -135,7 +65,7 @@ class PipeGrid(Grid[Tile]):
     def clear(self) -> PipeGrid:
         loop = set(self.loop_tiles())
 
-        def replace_start(c: Coord) -> Tile:
+        def replace_start(c: utils.Coord) -> Tile:
             c1, c2 = self._connections(c)
             max_line = max(c1.line, c2.line)
             max_pos = max(c1.pos, c2.pos)
@@ -156,7 +86,7 @@ class PipeGrid(Grid[Tile]):
             else:
                 raise ValueError(f"Unknown connection type for S={c}: {c1=}, {c2=}")
 
-        def clean_tile(c: Coord) -> Tile:
+        def clean_tile(c: utils.Coord) -> Tile:
             tile = self[c]
             if tile == Tile.START:
                 return replace_start(c)
@@ -169,20 +99,20 @@ class PipeGrid(Grid[Tile]):
             [[clean_tile(coord) for coord in line] for line in self.lines()]
         )
 
-    def _start(self) -> Coord:
-        s = self.find(Tile.START)
+    def _start(self) -> utils.Coord:
+        s = next((c for c in self if self[c] == Tile.START), None)
         if s is None:
             raise ValueError("Start not found")
         return s
 
-    def _connections(self, coord: Coord) -> list[Coord]:
+    def _connections(self, coord: utils.Coord) -> list[utils.Coord]:
         return [
             n
             for n in (self.cross_neighbors(coord))
             if self._connects_to(coord, n) and (self._connects_to(n, coord))
         ]
 
-    def _connects_to(self, c1: Coord, c2: Coord) -> bool:
+    def _connects_to(self, c1: utils.Coord, c2: utils.Coord) -> bool:
         tile = self[c1]
         for c in tile.connections():
             if c1.line + c.line == c2.line and c1.pos + c.pos == c2.pos:
